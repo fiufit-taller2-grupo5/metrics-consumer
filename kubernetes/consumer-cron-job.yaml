@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: metrics-consumer-cron
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: metrics-consumer
+              image: registry.cloud.okteto.net/prod-szwtomas/metrics-consumer:v5
+              imagePullPolicy: Always
+              command: ["/main"]
+          restartPolicy: OnFailure
