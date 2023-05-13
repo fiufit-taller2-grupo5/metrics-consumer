@@ -63,6 +63,8 @@ func uploadAggregatedMetricsToMongo(mongoClient *mongo_client.MongoClient, metri
 			continue
 		}
 
+		fmt.Println("metricName: " + metricName)
+
 		document := aggregatedMetricDocument{
 			MetricName: metricName,
 			Count:      metricCount,
