@@ -14,10 +14,14 @@ type aggregatedMetricDocument struct {
 	Timestamp  time.Time `json:"timestamp"`
 }
 
+type queuedMetric struct {
+	MetricName string `json:"metric_name"`
+}
+
 const SystemMetricsQueueRedis = "system-metrics"
 
 func ConsumeMetrics(redisClient *redis_client.RedisClient, mongoClient *mongo_client.MongoClient) {
-	metrics, err := redisClient.GetAllFromList(SystemMetricsQueueRedis)
+	metricsJsons, err := redisClient.GetAllFromList(SystemMetricsQueueRedis)
 	if err != nil {
 		fmt.Println("Failed getting metrics from redis queue: " + err.Error())
 		return
@@ -32,14 +36,30 @@ func ConsumeMetrics(redisClient *redis_client.RedisClient, mongoClient *mongo_cl
 
 	fmt.Println("Deleted all metrics from redis queue")
 
-	metricsAggregated := aggregateMetricsByName(metrics)
+	metricsFromQueue := getMetricNamesFromQueuedJsons(metricsJsons)
+	metricsAggregated := aggregateMetricsByName(metricsFromQueue)
 	uploadAggregatedMetricsToMongo(mongoClient, metricsAggregated)
 
 	err = redisClient.RemoveAllFromList("system-metrics")
 	if err != nil {
 		println("Failed deleting all elements from Redis")
 	}
+}
 
+func getMetricNamesFromQueuedJsons(metricsJsons []string) []string {
+	metricsNames := make([]string, 0)
+	for _, metricJson := range metricsJsons {
+		var metric queuedMetric
+		err := json.Unmarshal([]byte(metricJson), &metric)
+		if err != nil {
+			fmt.Println("Error decoding metric with json " + metricJson + ": " + err.Error())
+			continue
+		}
+
+		metricsNames = append(metricsNames, metric.MetricName)
+	}
+
+	return metricsNames
 }
 
 func aggregateMetricsByName(metrics []string) map[string]int {
