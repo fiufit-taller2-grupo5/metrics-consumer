@@ -2,8 +2,8 @@ package mongo_client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -33,20 +33,19 @@ func (mongoClient *MongoClient) Disconnect() {
 	}
 }
 
-func (mongoClient *MongoClient) InsertJSONDocument(jsonStr *string, collectionName string) error {
-	var jsonObj map[string]interface{}
-	err := json.Unmarshal([]byte(*jsonStr), &jsonObj)
-	if err != nil {
-		return fmt.Errorf("failed to parse JSON: %v", err)
-	}
+func (mongoClient *MongoClient) InsertJSONDocument(document bson.M, collectionName string) error {
+	ctx := context.Background()
+	opts := options.InsertOne().SetBypassDocumentValidation(true)
 
 	collection := mongoClient.client.Database("fiufit").Collection(collectionName)
-	_, err = collection.InsertOne(context.Background(), jsonObj)
+
+	_, err := collection.InsertOne(ctx, document, opts)
+
 	if err != nil {
 		return err
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func buildMongoURI() string {

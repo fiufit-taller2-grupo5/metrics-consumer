@@ -3,16 +3,12 @@ package consumer
 import (
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"metrics-consumer/mongo_client"
 	"metrics-consumer/redis_client"
 	"time"
 )
-
-type aggregatedMetricDocument struct {
-	MetricName string    `json:"metric"`
-	Count      int       `json:"count"`
-	Timestamp  time.Time `json:"timestamp"`
-}
 
 type queuedMetric struct {
 	MetricName string `json:"metric_name"`
@@ -83,24 +79,17 @@ func uploadAggregatedMetricsToMongo(mongoClient *mongo_client.MongoClient, metri
 			continue
 		}
 
-		fmt.Println("metricName: " + metricName)
-
-		document := aggregatedMetricDocument{
-			MetricName: metricName,
-			Count:      metricCount,
-			Timestamp:  time.Now(),
+		document := bson.M{
+			"metric": metricName,
+			"count":  metricCount,
+			"timestamp": primitive.Timestamp{
+				T: uint32(time.Now().Unix()),
+			},
 		}
 
-		metricJsonData, err := json.Marshal(document)
+		err := mongoClient.InsertJSONDocument(document, "system-metrics")
 		if err != nil {
-			println("Failed serializing metric " + metricName + "!")
-			continue
-		}
-
-		metricJsonString := string(metricJsonData)
-		err = mongoClient.InsertJSONDocument(&metricJsonString, "system-metrics")
-		if err != nil {
-			println("Failed saving json document " + metricJsonString + " for metric " + metricName + " into mongo")
+			println("Failed saving json document for metric " + metricName + " into MongoDB")
 		}
 	}
 }
