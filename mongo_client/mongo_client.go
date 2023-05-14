@@ -35,11 +35,10 @@ func (mongoClient *MongoClient) Disconnect() {
 
 func (mongoClient *MongoClient) InsertJSONDocument(document bson.M, collectionName string) error {
 	ctx := context.Background()
-	opts := options.InsertOne().SetBypassDocumentValidation(true)
 
 	collection := mongoClient.client.Database("fiufit").Collection(collectionName)
 
-	_, err := collection.InsertOne(ctx, document, opts)
+	_, err := collection.InsertOne(ctx, document)
 
 	if err != nil {
 		return err

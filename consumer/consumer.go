@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var (
+	SystemMetricsCollection = "system-metrics"
+)
+
 type queuedMetric struct {
 	MetricName string `json:"metric_name"`
 }
@@ -87,9 +91,11 @@ func uploadAggregatedMetricsToMongo(mongoClient *mongo_client.MongoClient, metri
 			},
 		}
 
-		err := mongoClient.InsertJSONDocument(document, "system-metrics")
+		err := mongoClient.InsertJSONDocument(document, SystemMetricsCollection)
 		if err != nil {
-			println("Failed saving json document for metric " + metricName + " into MongoDB")
+			fmt.Println("Failed saving json document for metric " + metricName + " into MongoDB: " + err.Error())
+		} else {
+			fmt.Printf("Saved document %+v for metric %s in MongoDB", document, metricName)
 		}
 	}
 }
