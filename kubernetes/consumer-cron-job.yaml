@@ -10,7 +10,7 @@ spec:
         spec:
           containers:
             - name: metrics-consumer
-              image: registry.cloud.okteto.net/prod-szwtomas/metrics-consumer:v5
+              image: registry.cloud.okteto.net/prod2-szwtomas/metrics-consumer:v5
               imagePullPolicy: Always
               command: ["/main"]
           restartPolicy: OnFailure
